@@ -1,37 +1,44 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { SplashScreen } from "expo-router";
+import { useFonts } from "expo-font";
+import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { AuthProvider } from './providers/AuthProvider';
+import { useAuth } from "./providers/AuthProvider";
+import {Stack} from "expo-router";
+import  TabsLayout from "./(tabs)/_layout";
+import AuthLayout from "./(auth)/_layout";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const { user } = useAuth();
+  const [fontsLoaded, error] = useFonts({
+    "Pacifico": require("../assets/fonts/Pacifico-Regular.ttf"),
+  })
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
+  if (!user) {
+    console.log("No user");
   }
+  
+  useEffect(() => {
+    if (error) throw error;
 
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded, error]);
+
+  if (!fontsLoaded) {
+    return null; // You can return a loading component here if needed
+  }
+  
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </ThemeProvider>
+      {user ? (
+        <Stack.Screen name="tabs"/>
+      ) : (
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+      )}
+    </Stack>
+    </GestureHandlerRootView>
+    </AuthProvider>
   );
 }
